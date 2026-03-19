@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Controle de Estoque - Roupas</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Controle de Estoque - Roupas</h1>
+            <nav>
+                <button class="nav-btn active" onclick="showTab('cadastro')">Cadastrar Produtos</button>
+                <button class="nav-btn" onclick="showTab('baixa')">Dar Baixa</button>
+                <button class="nav-btn" onclick="showTab('visualizar')">Visualizar/Editar</button>
+                <button class="nav-btn" onclick="showTab('promocoes')">Promoções</button>
+                <button class="nav-btn" onclick="showTab('pagamento')">Pagamento</button>
+                <button class="nav-btn" onclick="showTab('etiquetas')">🏷️ Etiquetas</button>
+                <button class="nav-btn" onclick="showTab('faturamento')">📊 Faturamento</button>
+            </nav>
+        </header>
+
+        <!-- Aba de Cadastro -->
+        <div id="cadastro" class="tab active">
+            <h2>Cadastrar Novo Produto</h2>
+            
+            <div class="codigo-auto-info">
+                <div>
+                    <strong>Código do Produto:</strong> 
+                    <span id="codigo-preview" class="codigo-destaque">Aguardando geração...</span>
+                </div>
+                <button type="button" onclick="gerarCodigoPreview()" class="btn-secondary">
+                    🔄 Gerar Novo Código
+                </button>
+            </div>
+            
+            <form id="form-cadastro">
+                <input type="hidden" id="codigo" name="codigo">
+                
+                <div class="form-group">
+                    <label for="nome">Nome do Produto:</label>
+                    <input type="text" id="nome" name="nome" required 
+                           placeholder="Ex: Camisa Social, Calça Jeans...">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group half">
+                        <label for="tamanho">Tamanho:</label>
+                        <select id="tamanho" name="tamanho" required>
+                            <option value="">Selecione...</option>
+                            <option value="PP">PP</option>
+                            <option value="P">P</option>
+                            <option value="M">M</option>
+                            <option value="G">G</option>
+                            <option value="GG">GG</option>
+                            <option value="XG">XG</option>
+                            <option value="36">36</option>
+                            <option value="38">38</option>
+                            <option value="40">40</option>
+                            <option value="42">42</option>
+                            <option value="44">44</option>
+                            <option value="46">46</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group half">
+                        <label for="quantidade">Quantidade:</label>
+                        <input type="number" id="quantidade" name="quantidade" 
+                               min="1" value="1" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="valor">Valor (R$):</label>
+                    <input type="number" id="valor" name="valor" step="0.01" 
+                           min="0" required placeholder="0,00">
+                </div>
+                
+                <button type="submit" class="btn-primary">📦 Cadastrar Produto</button>
+            </form>
+            
+            <div id="mensagem-cadastro" class="mensagem"></div>
+        </div>
+
+        <!-- Aba de Baixa -->
+        <div id="baixa" class="tab">
+            <h2>Dar Baixa em Produto</h2>
+            <div class="search-box">
+                <input type="text" id="busca-baixa" placeholder="Digite código ou nome do produto...">
+                <button onclick="buscarProdutoBaixa()" class="btn-primary">Buscar</button>
+            </div>
+            <div id="resultado-baixa" class="resultado-busca"></div>
+            <div id="form-baixa" style="display: none;">
+                <h3>Produto Encontrado:</h3>
+                <div id="dados-produto-baixa"></div>
+                <button onclick="confirmarBaixa()" class="btn-danger">Confirmar Baixa</button>
+            </div>
+        </div>
+
+        <!-- Aba de Visualizar/Editar -->
+        <div id="visualizar" class="tab">
+            <h2>Produtos em Estoque</h2>
+            <div class="search-box">
+                <input type="text" id="busca-visualizar" placeholder="Buscar produtos...">
+                <button onclick="buscarProdutos()" class="btn-primary">Buscar</button>
+            </div>
+            <div id="tabela-produtos"></div>
+            
+            <!-- Modal de Edição -->
+            <div id="modal-editar" class="modal">
+                <div class="modal-content">
+                    <span class="close" onclick="fecharModal()">&times;</span>
+                    <h3>Editar Produto</h3>
+                    <form id="form-editar">
+                        <input type="hidden" id="edit-id">
+                        <div class="form-group">
+                            <label for="edit-codigo">Código:</label>
+                            <input type="text" id="edit-codigo" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-nome">Nome:</label>
+                            <input type="text" id="edit-nome" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-tamanho">Tamanho:</label>
+                            <select id="edit-tamanho" required>
+                                <option value="PP">PP</option>
+                                <option value="P">P</option>
+                                <option value="M">M</option>
+                                <option value="G">G</option>
+                                <option value="GG">GG</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-valor">Valor:</label>
+                            <input type="number" id="edit-valor" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-quantidade">Quantidade:</label>
+                            <input type="number" id="edit-quantidade" min="1" required>
+                        </div>
+                        <button type="submit" class="btn-primary">Salvar Alterações</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Aba de Promoções -->
+        <div id="promocoes" class="tab">
+            <h2>Gerenciar Promoções</h2>
+            
+            <div class="promocoes-tabs">
+                <button class="tab-btn active" onclick="mostrarSubTab('criar-promocao')">Criar Promoção</button>
+                <button class="tab-btn" onclick="mostrarSubTab('codigos-promocionais')">Códigos Promocionais</button>
+            </div>
+            
+            <!-- Sub-aba: Criar Promoção -->
+            <div id="criar-promocao" class="sub-tab active">
+                <h3>Criar Novo Código Promocional</h3>
+                <form id="form-promocao">
+                    <div class="form-group">
+                        <label>Tipo de Código:</label>
+                        <div class="radio-group">
+                            <label>
+                                <input type="radio" name="tipo-codigo" value="especifico" checked onchange="toggleTipoCodigo()">
+                                Para produto específico
+                            </label>
+                            <label>
+                                <input type="radio" name="tipo-codigo" value="generico" onchange="toggleTipoCodigo()">
+                                Genérico (qualquer produto)
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="campo-busca-produto">
+                        <div class="form-group">
+                            <label for="busca-produto-promo">Buscar Produto (para código específico):</label>
+                            <div class="search-box">
+                                <input type="text" id="busca-produto-promo" placeholder="Digite código ou nome...">
+                                <button type="button" onclick="buscarProdutoPromocao()" class="btn-secondary">Buscar</button>
+                            </div>
+                        </div>
+                        <div id="resultado-produto-promo"></div>
+                    </div>
+                    
+                    <div id="campo-valor-minimo" style="display: none;">
+                        <div class="form-group">
+                            <label for="valor-minimo">Valor mínimo da compra (R$):</label>
+                            <input type="number" id="valor-minimo" min="0" step="0.01" placeholder="0,00">
+                            <small>Deixe 0 para sem valor mínimo</small>
+                        </div>
+                    </div>
+                    
+                    <div id="campos-promocao" style="display: none;">
+                        <div class="form-group">
+                            <label for="nome-promocao">Nome da Promoção:</label>
+                            <input type="text" id="nome-promocao" placeholder="Ex: Promoção de Verão, Liquidação Anual...">
+                            <small>Dê um nome descritivo para identificar a promoção</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Tipo de Desconto:</label>
+                            <div class="radio-group">
+                                <label>
+                                    <input type="radio" name="tipo-desconto" value="percentual" checked onchange="toggleTipoDesconto()">
+                                    Percentual (%)
+                                </label>
+                                <label>
+                                    <input type="radio" name="tipo-desconto" value="fixo" onchange="toggleTipoDesconto()">
+                                    Valor Fixo (R$)
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div id="campo-percentual">
+                            <div class="form-group">
+                                <label for="desconto">Percentual de Desconto (%):</label>
+                                <input type="number" id="desconto" min="0" max="100" step="0.01">
+                            </div>
+                        </div>
+                        
+                        <div id="campo-valor-fixo" style="display: none;">
+                            <div class="form-group">
+                                <label for="desconto-fixo">Valor do Desconto (R$):</label>
+                                <input type="number" id="desconto-fixo" min="0" step="0.01">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="codigo-promocional">Código Promocional:</label>
+                            <div class="input-group">
+                                <input type="text" id="codigo-promocional" placeholder="Ex: PROMO10, VERAO2024" required>
+                                <button type="button" onclick="gerarCodigoPromocional()" class="btn-secondary">Gerar Automático</button>
+                            </div>
+                            <small>Personalize ou clique em "Gerar Automático"</small>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group half">
+                                <label for="data-inicio">Data Início:</label>
+                                <input type="date" id="data-inicio" required>
+                            </div>
+                            <div class="form-group half">
+                                <label for="data-fim">Data Fim:</label>
+                                <input type="date" id="data-fim" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="limite-uso">Limite de usos (opcional):</label>
+                            <input type="number" id="limite-uso" min="1" placeholder="Deixe em branco para ilimitado">
+                        </div>
+                        
+                        <button type="submit" class="btn-primary btn-large">Criar Código Promocional</button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Sub-aba: Códigos Promocionais -->
+            <div id="codigos-promocionais" class="sub-tab">
+                <h3>Códigos Promocionais Ativos</h3>
+                
+                <div class="codigos-acoes">
+                    <button onclick="gerarCodigoEmMassa()" class="btn-secondary">Gerar Códigos em Massa</button>
+                    <button onclick="exportarCodigos()" class="btn-secondary">Exportar Códigos</button>
+                    <button onclick="recarregarCodigos()" class="btn-secondary">🔄 Recarregar</button>
+                </div>
+                
+                <div id="tabela-codigos" class="tabela-codigos">
+                    <!-- Tabela será preenchida via JavaScript -->
+                </div>
+            </div>
+            
+            <div id="lista-promocoes" class="mt-4">
+                <h3>Promoções Ativas</h3>
+                <div id="tabela-promocoes"></div>
+            </div>
+        </div>
+
+        <!-- Aba de Pagamento -->
+        <div id="pagamento" class="tab">
+            <h2>Finalizar Venda</h2>
+            
+            <div class="cliente-info">
+                <div class="form-group">
+                    <label for="nome-cliente">Nome do Cliente:</label>
+                    <input type="text" id="nome-cliente" placeholder="Digite o nome do cliente">
+                </div>
+            </div>
+            
+            <div class="codigo-promocional-box">
+                <div class="form-group">
+                    <label for="codigo-promo-pagamento">Código Promocional:</label>
+                    <div class="input-group">
+                        <input type="text" id="codigo-promo-pagamento" placeholder="Digite o código promocional">
+                        <button onclick="aplicarCodigoPromocional()" class="btn-secondary">Aplicar</button>
+                    </div>
+                </div>
+                <div id="mensagem-codigo" class="mensagem-codigo"></div>
+            </div>
+            
+            <div class="search-box">
+                <input type="text" id="busca-pagamento" placeholder="Digite código ou nome do produto...">
+                <button onclick="buscarProdutoPagamento()" class="btn-primary">Buscar</button>
+            </div>
+            
+            <div id="resultado-pagamento" class="resultado-busca"></div>
+            
+            <div id="carrinho">
+                <h3>Carrinho</h3>
+                <div id="itens-carrinho"></div>
+                
+                <div class="resumo-venda">
+                    <div class="subtotal">
+                        <span>Subtotal:</span>
+                        <span id="subtotal-carrinho">R$ 0,00</span>
+                    </div>
+                    <div class="descontos" id="desconto-codigo" style="display: none;">
+                        <span>Desconto (Código):</span>
+                        <span id="valor-desconto-codigo">R$ 0,00</span>
+                    </div>
+                    <div class="descontos">
+                        <span>Descontos (Promoções):</span>
+                        <span id="descontos-carrinho">R$ 0,00</span>
+                    </div>
+                    <div class="total-carrinho">
+                        <span>Total:</span>
+                        <span id="total-carrinho">R$ 0,00</span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="forma-pagamento">Forma de Pagamento:</label>
+                    <select id="forma-pagamento" required>
+                        <option value="">Selecione...</option>
+                        <option value="Dinheiro">Dinheiro</option>
+                        <option value="Cartão de Crédito">Cartão de Crédito</option>
+                        <option value="Cartão de Débito">Cartão de Débito</option>
+                        <option value="PIX">PIX</option>
+                        <option value="Transferência">Transferência</option>
+                    </select>
+                </div>
+                
+                <button onclick="finalizarVenda()" class="btn-success btn-large">Finalizar Venda</button>
+            </div>
+        </div>
+
+        <!-- Aba de Etiquetas -->
+        <div id="etiquetas" class="tab">
+            <h2>Gerar Etiquetas de Produtos</h2>
+            
+            <div class="etiquetas-controls">
+                <div class="search-box">
+                    <input type="text" id="busca-etiqueta" placeholder="Buscar produto por código ou nome...">
+                    <button onclick="buscarProdutoEtiqueta()" class="btn-primary">Buscar</button>
+                    <button onclick="limparBuscaEtiqueta()" class="btn-secondary">Limpar</button>
+                </div>
+                
+                <div class="filtros-etiqueta">
+                    <label>
+                        <input type="checkbox" id="filtro-todos" checked onchange="filtrarEtiquetas()"> 
+                        Todos os produtos
+                    </label>
+                    <label>
+                        <input type="checkbox" id="filtro-promocao" onchange="filtrarEtiquetas()"> 
+                        Apenas em promoção
+                    </label>
+                </div>
+            </div>
+            
+            <div id="resultado-etiquetas" class="etiquetas-grid"></div>
+            
+            <div class="etiquetas-acoes">
+                <button onclick="imprimirEtiquetasSelecionadas()" class="btn-success">
+                    🖨️ Imprimir Etiquetas Selecionadas
+                </button>
+                <button onclick="imprimirTodasEtiquetas()" class="btn-primary">
+                    📑 Imprimir Todas
+                </button>
+                <button onclick="exportarEtiquetasPDF()" class="btn-secondary">
+                    📥 Exportar PDF
+                </button>
+            </div>
+        </div>
+
+        <!-- Aba de Faturamento -->
+        <div id="faturamento" class="tab">
+            <h2>📊 Faturamento</h2>
+            
+            <div class="faturamento-periodo">
+                <div class="periodo-selector">
+                    <button class="btn-secondary" onclick="carregarFaturamentoMensal()">Mês Atual</button>
+                    <button class="btn-secondary" onclick="carregarFaturamentoAnual()">Ano Atual</button>
+                    <button class="btn-secondary" onclick="carregarFaturamentoPersonalizado()">Personalizado</button>
+                </div>
+                
+                <div id="faturamento-personalizado" style="display: none;">
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label>Data Início:</label>
+                            <input type="date" id="data-inicio-faturamento">
+                        </div>
+                        <div class="form-group half">
+                            <label>Data Fim:</label>
+                            <input type="date" id="data-fim-faturamento">
+                        </div>
+                    </div>
+                    <button onclick="buscarFaturamentoPeriodo()" class="btn-primary">Buscar</button>
+                </div>
+            </div>
+            
+            <div class="faturamento-resumo">
+                <div class="resumo-card">
+                    <h3>Total de Vendas</h3>
+                    <div class="resumo-valor" id="total-vendas">R$ 0,00</div>
+                </div>
+                <div class="resumo-card">
+                    <h3>Total de Descontos</h3>
+                    <div class="resumo-valor" id="total-descontos">R$ 0,00</div>
+                </div>
+                <div class="resumo-card">
+                    <h3>Número de Vendas</h3>
+                    <div class="resumo-valor" id="numero-vendas">0</div>
+                </div>
+                <div class="resumo-card">
+                    <h3>Ticket Médio</h3>
+                    <div class="resumo-valor" id="ticket-medio">R$ 0,00</div>
+                </div>
+            </div>
+            
+            <div class="faturamento-grafico">
+                <h3>Vendas por Período</h3>
+                <canvas id="grafico-vendas"></canvas>
+            </div>
+            
+            <div class="faturamento-tabelas">
+                <div class="tabela-container">
+                    <h3>Vendas por Forma de Pagamento</h3>
+                    <table id="tabela-formas-pagamento">
+                        <thead>
+                            <tr>
+                                <th>Forma de Pagamento</th>
+                                <th>Quantidade</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                
+                <div class="tabela-container">
+                    <h3>Últimas Vendas</h3>
+                    <table id="tabela-ultimas-vendas">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Produto</th>
+                                <th>Cliente</th>
+                                <th>Valor</th>
+                                <th>Pagamento</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Edição de Etiqueta -->
+        <div id="modal-etiqueta" class="modal">
+            <div class="modal-content modal-lg">
+                <span class="close" onclick="fecharModalEtiqueta()">&times;</span>
+                <h3>Personalizar Etiqueta</h3>
+                
+                <div class="etiqueta-preview" id="etiqueta-preview"></div>
+                
+                <form id="form-etiqueta">
+                    <input type="hidden" id="etiqueta-produto-id">
+                    
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="etiqueta-codigo">Código de Barras:</label>
+                            <input type="text" id="etiqueta-codigo" readonly class="codigo-barras-input">
+                        </div>
+                        <div class="form-group half">
+                            <label for="etiquata-cor">Cor da Etiqueta:</label>
+                            <select id="etiqueta-cor" onchange="atualizarPreviewEtiqueta()">
+                                <option value="#ffffff">Branca</option>
+                                <option value="#fff3cd">Amarela</option>
+                                <option value="#d4edda">Verde</option>
+                                <option value="#cce5ff">Azul</option>
+                                <option value="#f8d7da">Vermelha</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="etiqueta-nome">Nome do Produto:</label>
+                            <input type="text" id="etiqueta-nome" onchange="atualizarPreviewEtiqueta()">
+                        </div>
+                        <div class="form-group half">
+                            <label for="etiqueta-tamanho">Tamanho:</label>
+                            <input type="text" id="etiqueta-tamanho" onchange="atualizarPreviewEtiqueta()">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="etiqueta-valor">Valor:</label>
+                            <input type="number" id="etiqueta-valor" step="0.01" onchange="atualizarPreviewEtiqueta()">
+                        </div>
+                        <div class="form-group half">
+                            <label for="etiqueta-valor-promo">Valor Promocional:</label>
+                            <input type="number" id="etiqueta-valor-promo" step="0.01" onchange="atualizarPreviewEtiqueta()">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="etiqueta-mostrar-promo" onchange="atualizarPreviewEtiqueta()">
+                            Mostrar preço promocional
+                        </label>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="etiqueta-texto-extra">Texto Extra:</label>
+                        <input type="text" id="etiqueta-texto-extra" placeholder="Ex: Liquidação, Nova Coleção..." onchange="atualizarPreviewEtiqueta()">
+                    </div>
+                    
+                    <div class="etiqueta-acoes-modal">
+                        <button type="button" onclick="salvarEtiqueta()" class="btn-success">Salvar</button>
+                        <button type="button" onclick="imprimirEtiquetaUnica()" class="btn-primary">Imprimir</button>
+                        <button type="button" onclick="fecharModalEtiqueta()" class="btn-secondary">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
